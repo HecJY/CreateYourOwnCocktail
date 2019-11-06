@@ -35,3 +35,7 @@ class CBOW(torch.nn.Module):
     def get_word_vector(self, word_idx):
         word = Variable(torch.LongTensor([word_idx]))
         return self.embeddings(word).view(1, -1)
+
+
+
+

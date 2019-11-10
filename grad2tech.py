@@ -27,30 +27,3 @@ def grad2tech_model(data, unique_vocab, word_to_idx):
             print("{}/{} loss {:.2f}".format(epoch, EPOCH, loss_avg))
     return gte
 
-
-def main():
-    # content processed as context/target
-    # consider 2*CONTEXT_SIZE as context window where middle word as target
-    data = list()
-    for i in range(CONTEXT_SIZE, len(corpus_text) - CONTEXT_SIZE):
-        data_context = list()
-        for j in range(CONTEXT_SIZE):
-            data_context.append(corpus_text[i - CONTEXT_SIZE + j])
-
-        for j in range(1, CONTEXT_SIZE + 1):
-            data_context.append(corpus_text[i + j])
-        data_target = corpus_text[i]
-        data.append((data_context, data_target))
-
-    print("Some data: ", data[:3])
-
-    unique_vocab = list(set(corpus_text))
-
-    # mapping to index
-    word_to_idx = {w: i for i, w in enumerate(unique_vocab)}
-
-    # train model- changed global variable if needed
-    cbow = train_cbow(data, unique_vocab, word_to_idx)
-
-    # get two words similarity
-    test_cbow(cbow, unique_vocab, word_to_idx)

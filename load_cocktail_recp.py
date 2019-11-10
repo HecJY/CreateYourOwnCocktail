@@ -44,26 +44,27 @@ def gradfilter(raw_input):
     match = str1.join(match)
     match = re.findall(r'\b(?!oz|dash|ml)\b(\S+\s?[,]?)', match)
     match = str1.join(match)
-
-    print(match)
-
-
+    match = match.replace(" ,",",")
     return match
 
 def techfilter(raw):
     match = re.findall(r'[\w]+', raw)
     str1 = " "
     match = str1.join(match)
+    match = match.replace(" ,", ",")
     return match
 
 def gradAfilter(raw):
-    match = re.findall(r'[\w]+|[,]', raw)
+    match = re.findall(r'[.]|\w+|[,]', raw)
     str1 = " "
     match = str1.join(match)
+    match = match.replace(" ,",",")
     return match
 
 
 
 
 if __name__ == '__main__':
-    grad_grad()
+    A, B, C = grad_grad()
+
+    pprint.pprint(B)

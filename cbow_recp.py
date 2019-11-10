@@ -37,42 +37,16 @@ class CBOW(torch.nn.Module):
         return self.embeddings(word).view(1, -1)
 
 
-def train_cbow(data, unique_vocab, word_to_idx):
-    cbow = CBOW(len(unique_vocab), EMBEDDING_DIM, CONTEXT_SIZE)
 
-    nll_loss = nn.NLLLoss()  # loss function
-    optimizer = SGD(cbow.parameters(), lr=0.001)
-
-    print(len(data))
-
-    for epoch in range(EPOCH):
-        total_loss = 0
-        for context, target in data:
-            inp_var = Variable(torch.LongTensor([word_to_idx[word] for word in context]))
-            target_var = Variable(torch.LongTensor([word_to_idx[target]]))
-
-            cbow.zero_grad()
-            log_prob = cbow(inp_var)
-            loss = nll_loss(log_prob, target_var)
-            loss.backward()
-            optimizer.step()
-            total_loss += loss.data
-
-        if epoch % VERVOSE == 0:
-            loss_avg = float(total_loss / len(data))
-            print("{}/{} loss {:.2f}".format(epoch, EPOCH, loss_avg))
-    return cbow
-
-
-def test_cbow(cbow, unique_vocab, word_to_idx):
+def get_percentage(cbow, unique_vocab, word_to_idx, source1, source2):
     # test word similarity
-    word_1 = unique_vocab[2]
+    word_1 = unique_vocab[3]
     word_2 = unique_vocab[3]
 
-    word_1_vec = cbow.get_word_vector(word_to_idx[word_1])
-    word_2_vec = cbow.get_word_vector(word_to_idx[word_2])
+    word_1_vec = cbow.get_word_vector(word_to_idx[word_1])[0]
+    word_2_vec = cbow.get_word_vector(word_to_idx[word_2])[0]
 
-    word_similarity = (word_1_vec.dot(word_2_vec) / (torch.norm(word_1_vec) * torch.norm(word_2_vec))).data.numpy()[0]
+    word_similarity = (word_1_vec.dot(word_2_vec) / (torch.norm(word_1_vec) * torch.norm(word_2_vec))).data.numpy()
     print("Similarity between '{}' & '{}' : {:0.4f}".format(word_1, word_2, word_similarity))
 
 

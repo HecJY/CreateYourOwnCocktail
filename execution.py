@@ -16,112 +16,139 @@ EMBEDDING_DIM = 300
 EPOCH = 20
 VERVOSE = 5
 
+
+def set_word_ix(vocab):
+    word_to_ix = {}
+    ix_to_word = {}
+    vocab_size = len(vocab)
+    for i, word in enumerate(vocab):
+        word_to_ix[word] = i
+        ix_to_word[i] = word
+
+    return word_to_ix,ix_to_word
+
 def main():
-    ctx_size = input("Please enter the number of sources you want to use")
+    ctx_size = input("Please enter the number of sources you want to use") #CONTEXT_SIZE
     main_source = input("Please enter the sources you want them in the cocktail recipe, please enter them with ',' to separate")
 
-
     #first, load the information from the database
+    #g2g, expects combination of gradients,g2a amounts and gradients, gradient and its techniques
     (g2g, g2a, g2t) = load_cocktail_recp.grad_grad()
 
-    #second, feed the grad2grad in and train the model
-    g2g_mod = g2g_mod_operations(g2g)
-
-    #third, feed the grad2tech in and train the model
-    g2t_mod = g2t_mod_operations(g2t)
-
-    #forth, feed the gradTech2amount in and train the model
-    g2a_mod = g2a_mod_operations(g2a)
-
-    #fifth, loading the templates from the templates folder, and print the result
-    word_vec = make_context_vector(main_source, word_to_ix=None)
+    #g2g outputs {recp: grad}
 
 
+    #create a for loop to generate the expected number of sources in recipe.
+    num_sources = len(main_source.split(","))
+    context = main_source.split(",")
+    for num in range(num_sources, int(ctx_size) - 1):
+        # get the trained models for each model, under the context right now
+        # initialize the models first
+        for recp_name in g2g:
+            #init the model, and prepare for train
+            uniq_grad = get_uniq(g2g[recp_name])
+            uniq_amount = get_uniq(g2a[recp_name])
+            uniq_tech = get_uniq(g2t[recp_name])
+            g2g_mod = cbow_recp.CBOW(len(uniq_grad), EMBEDDING_DIM, num)  #gta = CBOW(len(unique_vocab), EMBEDDING_DIM, CONTEXT_SIZE)
+            #g2a_mod = cbow_recp.CBOW(len(uniq_amount), EMBEDDING_DIM, num)  #gta = CBOW(len(unique_vocab), EMBEDDING_DIM, CONTEXT_SIZE)
+            #g2t_mod = cbow_recp.CBOW(len(uniq_tech), EMBEDDING_DIM, num)  # gta = CBOW(len(unique_vocab), EMBEDDING_DIM, CONTEXT_SIZE)
+
+
+            #get_result
+            g2g_result = g2g_mod_operations(g2g[recp_name], g2g_mod, num, uniq_grad, context)
+            #g2a_result = g2a_mod_operations(g2a[recp_name], g2a_mod, num, uniq_grad, context)
+            #g2t_result = g2t_mod_operations(g2t[recp_name], g2t_mod, num, uniq_grad, context)
+
+            context += g2g_result
+
+
+    #now you get the total gradients, based on the gradients, find the corresponding techniques
 
 
 
-def g2g_mod_operations(g2g):
-    data = list()
-    for i in range(CONTEXT_SIZE, len(g2g) - CONTEXT_SIZE):
+
+    #find the corresponding amount
+
+
+
+
+def get_uniq(context):
+    splt_ctx = context.split(",")
+    return set(splt_ctx)
+
+def g2g_mod_operations(g2g, g2g_mod, size, unique_vocab, input_ctx):
+    data = g2g.split(",")
+    for i in range(size, len(g2g) - size):
         data_context = list()
-        for j in range(CONTEXT_SIZE):
-            data_context.append(g2g[i - CONTEXT_SIZE + j])
+        for j in range(size):
+            data_context.append(g2g[i - size + j])
 
-        for j in range(1, CONTEXT_SIZE + 1):
+        for j in range(1, size + 1):
             data_context.append(g2g[i + j])
         data_target = g2g[i]
         data.append((data_context, data_target))
 
     print("Some data: ", data[:3])
 
-    unique_vocab = list(set(g2g))
-
     # mapping to index
-    word_to_idx = {w: i for i, w in enumerate(unique_vocab)}
+    word_to_idx, ix_to_word = set_word_ix(unique_vocab)
 
     # train model- changed global variable if needed
-    g2g_model = grad2grad.grad2grad_model(data, unique_vocab, word_to_idx)
+    g2g_model = grad2grad.grad2grad_model(g2g_mod, data, word_to_idx)
 
-    # get two words similarity
-    cbow_recp.get_percentage(g2g_model, unique_vocab, word_to_idx,0,0)
+    pred_result = get_pred(g2g_model,input_ctx,word_to_idx, ix_to_word)
 
-    return g2g_model
-
+    return pred_result
 
 
-def g2a_mod_operations(g2a):
-    data = list()
-    for i in range(CONTEXT_SIZE, len(g2a) - CONTEXT_SIZE):
+
+def g2t_mod_operations(g2t, g2t_mod, size, unique_vocab, input_ctx):
+    data = g2t.split(",")
+    for i in range(size, len(g2t) - size):
         data_context = list()
-        for j in range(CONTEXT_SIZE):
-            data_context.append(g2a[i - CONTEXT_SIZE + j])
+        for j in range(size):
+            data_context.append(g2t[i - size + j])
 
-        for j in range(1, CONTEXT_SIZE + 1):
-            data_context.append(g2a[i + j])
-        data_target = g2a[i]
-        data.append((data_context, data_target))
-
-    print("Some data: ", data[:3])
-
-    unique_vocab = list(set(g2a))
-
-    # mapping to index
-    word_to_idx = {w: i for i, w in enumerate(unique_vocab)}
-
-    # train model- changed global variable if needed
-    g2a_model = gradTech2amount.GTA_model(data, unique_vocab, word_to_idx)
-
-    # get two words similarity
-    cbow_recp.get_percentage(g2a_model, unique_vocab, word_to_idx, 0, 0)
-
-    return g2a_model
-
-def g2t_mod_operations(g2t):
-    data = list()
-    for i in range(CONTEXT_SIZE, len(g2t) - CONTEXT_SIZE):
-        data_context = list()
-        for j in range(CONTEXT_SIZE):
-            data_context.append(g2t[i - CONTEXT_SIZE + j])
-
-        for j in range(1, CONTEXT_SIZE + 1):
+        for j in range(1, size + 1):
             data_context.append(g2t[i + j])
         data_target = g2t[i]
         data.append((data_context, data_target))
 
     print("Some data: ", data[:3])
 
-    unique_vocab = list(set(g2t))
-
     # mapping to index
-    word_to_idx = {w: i for i, w in enumerate(unique_vocab)}
+    word_to_idx, ix_to_word = set_word_ix(unique_vocab)
 
     # train model- changed global variable if needed
-    g2t_model = grad2tech.grad2tech_model(data, unique_vocab, word_to_idx)
+    g2g_model = grad2grad.grad2grad_model(g2t_mod, data, word_to_idx)
 
-    # get two words similarity
-    cbow_recp.get_percentage(g2t_model, unique_vocab, word_to_idx, 0, 0)
+    pred_result = get_pred(g2g_model,input_ctx,word_to_idx, ix_to_word)
 
-    return g2t_model
+    return pred_result
+
+def g2a_mod_operations(g2a, g2a_mod, size, unique_vocab, input_ctx):
+    data = g2a.split(",")
+    for i in range(size, len(g2a) - size):
+        data_context = list()
+        for j in range(size):
+            data_context.append(g2a[i - size + j])
+
+        for j in range(1, size + 1):
+            data_context.append(g2a[i + j])
+        data_target = g2a[i]
+        data.append((data_context, data_target))
+
+    print("Some data: ", data[:3])
+
+    # mapping to index
+    word_to_idx, ix_to_word = set_word_ix(unique_vocab)
+
+    # train model- changed global variable if needed
+    g2g_model = grad2grad.grad2grad_model(g2a_mod, data, word_to_idx)
+
+    pred_result = get_pred(g2g_model,input_ctx,word_to_idx, ix_to_word)
+
+    return pred_result
 
 
 def make_context_vector(context, word_to_ix):
@@ -138,15 +165,14 @@ def get_index_of_max(input):
             index = i
     return index
 
-"""
-def get_per(model):
-    context = ['People', 'create', 'to', 'direct']
+#takes the input sources, generate one that is most likely to be "successful"
+def get_pred(model, context, word_to_ix, ix_to_word):
     context_vector = make_context_vector(context, word_to_ix)
     a = model(context_vector).data.numpy()
-    print('Raw text: {}\n'.format(' '.join(raw_text)))
-    print('Context: {}\n'.format(context))
+    predicted_source = get_max_prob_result(a[0], ix_to_word)
     print('Prediction: {}'.format(get_max_prob_result(a[0], ix_to_word)))
+    return predicted_source
 
-"""
+
 if __name__ == '__main__':
     main()

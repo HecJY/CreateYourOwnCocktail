@@ -1,8 +1,7 @@
 from cbow_recp import *
 from load_cocktail_recp import *
 
-def grad2tech_model(data, unique_vocab, word_to_idx):
-    gte = CBOW(len(unique_vocab), EMBEDDING_DIM, CONTEXT_SIZE)
+def grad2tech_model(gte,data, word_to_idx):
 
     nll_loss = nn.NLLLoss()  # loss function
     optimizer = SGD(gte.parameters(), lr=0.001)

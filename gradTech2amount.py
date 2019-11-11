@@ -4,8 +4,7 @@ from load_cocktail_recp import *
 
 
 
-def GTA_model(data, unique_vocab, word_to_idx):
-    gta = CBOW(len(unique_vocab), EMBEDDING_DIM, CONTEXT_SIZE)
+def GTA_model(gta, data, word_to_idx):
 
     nll_loss = nn.NLLLoss()  # loss function
     optimizer = SGD(gta.parameters(), lr=0.001)

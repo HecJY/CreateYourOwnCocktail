@@ -49,27 +49,32 @@ def main():
             tmp += str(context[x])
 
     context = tmp
+    #set up unique vocabs
+    uniq_grad = get_uniq(g2g)
+    # uniq_amount = get_uniq(g2a[recp_name])
+    # uniq_tech = get_uniq(g2t[recp_name])
+    word_to_idx, ix_to_word = set_word_ix(uniq_grad)
+    if context in word_to_idx.keys():
+        a = 1
     for num in range(num_sources, int(ctx_size) - 1):
         # get the trained models for each model, under the context right now
         # initialize the models first
         # do modifications here
+        g2g_mod = cbow_recp.CBOW(len(uniq_grad), EMBEDDING_DIM, num)  # gta = CBOW(len(unique_vocab), EMBEDDING_DIM, CONTEXT_SIZE)
+        # g2a_mod = cbow_recp.CBOW(len(uniq_amount), EMBEDDING_DIM, num)  #gta = CBOW(len(unique_vocab), EMBEDDING_DIM, CONTEXT_SIZE)
+        # g2t_mod = cbow_recp.CBOW(len(uniq_tech), EMBEDDING_DIM, num)  # gta = CBOW(len(unique_vocab), EMBEDDING_DIM, CONTEXT_SIZE)
         for recp_name in g2g:
-            #init the model, and prepare for train
-            uniq_grad = get_uniq(g2g[recp_name])
-            #uniq_amount = get_uniq(g2a[recp_name])
-            #uniq_tech = get_uniq(g2t[recp_name])
-            g2g_mod = cbow_recp.CBOW(len(uniq_grad), EMBEDDING_DIM, num)  #gta = CBOW(len(unique_vocab), EMBEDDING_DIM, CONTEXT_SIZE)
-            #g2a_mod = cbow_recp.CBOW(len(uniq_amount), EMBEDDING_DIM, num)  #gta = CBOW(len(unique_vocab), EMBEDDING_DIM, CONTEXT_SIZE)
-            #g2t_mod = cbow_recp.CBOW(len(uniq_tech), EMBEDDING_DIM, num)  # gta = CBOW(len(unique_vocab), EMBEDDING_DIM, CONTEXT_SIZE)
-
-
             #get_result
-            g2g_result = g2g_mod_operations(g2g[recp_name], g2g_mod, num, uniq_grad, context)
+            g2g_mod = g2g_mod_operations(g2g[recp_name], g2g_mod, num, word_to_idx)
             #g2a_result = g2a_mod_operations(g2a[recp_name], g2a_mod, num, uniq_grad, context)
             #g2t_result = g2t_mod_operations(g2t[recp_name], g2t_mod, num, uniq_grad, context)
 
-            context += g2g_result
 
+        pred_result = get_pred(g2g_mod, context, word_to_idx, ix_to_word)
+        context += pred_result
+
+
+    return context
 
     #now you get the total gradients, based on the gradients, find the corresponding techniques
 
@@ -82,35 +87,50 @@ def main():
 
 
 def get_uniq(context):
-    context = context.replace(", ",",")
-    splt_ctx = context.split(",")
-    return set(splt_ctx)
+    total_vocab = list()
+    for x in context:
+        context1 = context[x]
 
-def g2g_mod_operations(g2g, g2g_mod, size, unique_vocab, input_ctx):
+        context1 = context1.replace(", ",",")
+        splt_ctx = context1.split(",")
+        total_vocab += splt_ctx
+    return set(total_vocab)
+
+def g2g_mod_operations(g2g, g2g_mod, size,word_to_idx):
+    print(g2g)
+    print(size)
     data = list()
     g2g = g2g.replace(", ",",")
     g2g = g2g.split(",")
-    for i in range(size, len(g2g) - size):
-        data_context = list()
-        for j in range(size):
-            data_context.append(g2g[i - size + j])
+    print(g2g)
+    try:
+        for i in range(size, len(g2g) - size):
+            data_context = list()
+            for j in range(size):
+                data_context.append(g2g[i - size + j])
+                print(data_context)
+            for j in range(1, size + 1):
+                data_context.append(g2g[i + j])
+                print(data_context)
+            data_target = g2g[i]
+            data.append((data_context, data_target))
 
-        for j in range(1, size + 1):
-            data_context.append(g2g[i + j])
-        data_target = g2g[i]
-        data.append((data_context, data_target))
+        if(len(g2g)-size-1) <= 0:
+            for x in range(0, size-1):
+                data_context.append(g2g[0+x])
+            data_target.append(g2g[size])
+            data.append((data_context,data_target))
 
-    print("Some data: ", data[:3])
+        print("Some data: ", data[:3])
 
-    # mapping to index
-    word_to_idx, ix_to_word = set_word_ix(unique_vocab)
 
-    # train model- changed global variable if needed
-    g2g_model = grad2grad.grad2grad_model(g2g_mod, data, word_to_idx)
+        # train model- changed global variable if needed
+        g2g_model = grad2grad.grad2grad_model(g2g_mod, data, word_to_idx)
+    except:
+        g2g_model = g2g_mod
 
-    pred_result = get_pred(g2g_model,input_ctx,word_to_idx, ix_to_word)
 
-    return pred_result
+    return g2g_model
 
 
 
@@ -189,4 +209,4 @@ def get_pred(model, context, word_to_ix, ix_to_word):
 
 
 if __name__ == '__main__':
-    main()
+    print(main())

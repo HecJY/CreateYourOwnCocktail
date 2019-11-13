@@ -52,6 +52,7 @@ def main():
     for num in range(num_sources, int(ctx_size) - 1):
         # get the trained models for each model, under the context right now
         # initialize the models first
+        # do modifications here
         for recp_name in g2g:
             #init the model, and prepare for train
             uniq_grad = get_uniq(g2g[recp_name])

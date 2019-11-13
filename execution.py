@@ -92,6 +92,7 @@ def get_uniq(context):
         context1 = context[x]
 
         context1 = context1.replace(", ",",")
+        context1 = context1.replace("  "," ")
         splt_ctx = context1.split(",")
         total_vocab += splt_ctx
     return set(total_vocab)
@@ -101,6 +102,7 @@ def g2g_mod_operations(g2g, g2g_mod, size,word_to_idx):
     print(size)
     data = list()
     g2g = g2g.replace(", ",",")
+    g2g = g2g.replace("  "," ")
     g2g = g2g.split(",")
     print(g2g)
     try:

@@ -28,8 +28,8 @@ def set_word_ix(vocab):
     return word_to_ix,ix_to_word
 
 def main():
-    ctx_size = input("Please enter the number of sources you want to use") #CONTEXT_SIZE
-    main_source = input("Please enter the sources you want them in the cocktail recipe, please enter them with ',' to separate")
+    ctx_size = input("Please enter the number of sources you want to use:   ") #CONTEXT_SIZE
+    main_source = input("Please enter the sources you want them in the cocktail recipe, please enter them with ',' to separate:     ")
 
     #first, load the information from the database
     #g2g, expects combination of gradients,g2a amounts and gradients, gradient and its techniques
@@ -41,14 +41,22 @@ def main():
     #create a for loop to generate the expected number of sources in recipe.
     num_sources = len(main_source.split(","))
     context = main_source.split(",")
+    tmp = ""
+    for x in range(0,len(context)):
+        if x != num_sources-1:
+            tmp+= str(context[x]) + ","
+        elif x < num_sources:
+            tmp += str(context[x])
+
+    context = tmp
     for num in range(num_sources, int(ctx_size) - 1):
         # get the trained models for each model, under the context right now
         # initialize the models first
         for recp_name in g2g:
             #init the model, and prepare for train
             uniq_grad = get_uniq(g2g[recp_name])
-            uniq_amount = get_uniq(g2a[recp_name])
-            uniq_tech = get_uniq(g2t[recp_name])
+            #uniq_amount = get_uniq(g2a[recp_name])
+            #uniq_tech = get_uniq(g2t[recp_name])
             g2g_mod = cbow_recp.CBOW(len(uniq_grad), EMBEDDING_DIM, num)  #gta = CBOW(len(unique_vocab), EMBEDDING_DIM, CONTEXT_SIZE)
             #g2a_mod = cbow_recp.CBOW(len(uniq_amount), EMBEDDING_DIM, num)  #gta = CBOW(len(unique_vocab), EMBEDDING_DIM, CONTEXT_SIZE)
             #g2t_mod = cbow_recp.CBOW(len(uniq_tech), EMBEDDING_DIM, num)  # gta = CBOW(len(unique_vocab), EMBEDDING_DIM, CONTEXT_SIZE)
@@ -73,11 +81,14 @@ def main():
 
 
 def get_uniq(context):
+    context = context.replace(", ",",")
     splt_ctx = context.split(",")
     return set(splt_ctx)
 
 def g2g_mod_operations(g2g, g2g_mod, size, unique_vocab, input_ctx):
-    data = g2g.split(",")
+    data = list()
+    g2g = g2g.replace(", ",",")
+    g2g = g2g.split(",")
     for i in range(size, len(g2g) - size):
         data_context = list()
         for j in range(size):
@@ -152,6 +163,8 @@ def g2a_mod_operations(g2a, g2a_mod, size, unique_vocab, input_ctx):
 
 
 def make_context_vector(context, word_to_ix):
+    print(context)
+    context = {context}
     idxs = [word_to_ix[w] for w in context]
     return torch.tensor(idxs, dtype=torch.long)
 

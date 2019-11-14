@@ -8,7 +8,7 @@ def grad2grad_model(ggm, data, word_to_idx):
 
     print(len(data))
 
-    for epoch in range(EPOCH):
+    for epoch in range(40):
         total_loss = 0
         for context, target in data:
             inp_var = Variable(torch.LongTensor([word_to_idx[word] for word in context]))

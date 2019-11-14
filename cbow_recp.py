@@ -8,7 +8,7 @@ import torch.nn.functional as F
 
 CONTEXT_SIZE = 4
 EMBEDDING_DIM = 50
-EPOCH = 20
+EPOCH = 40
 VERVOSE = 5
 
 class CBOW(torch.nn.Module):
@@ -20,7 +20,7 @@ class CBOW(torch.nn.Module):
         self.context_size = context_size
         self.embeddings = nn.Embedding(self.vocab_size, self.embedding_size)
         # return vector size will be context_size*2*embedding_size
-        self.lin1 = nn.Linear(self.context_size *  self.embedding_size, 300)
+        self.lin1 = nn.Linear(self.context_size * self.embedding_size, 300)
         self.lin2 = nn.Linear(300, self.vocab_size)
 
     def forward(self, inp):

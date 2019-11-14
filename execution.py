@@ -12,7 +12,7 @@ from torch.optim import SGD
 import torch.nn.functional as F
 
 CONTEXT_SIZE = 4
-EPOCH = 20
+EPOCH = 40
 VERVOSE = 5
 
 
@@ -21,10 +21,13 @@ def set_word_ix(vocab):
     ix_to_word = {}
     vocab_size = len(vocab)
     for i, word in enumerate(vocab):
+        word.replace("  "," ")
         word_to_ix[word] = i
         ix_to_word[i] = word
 
     return word_to_ix,ix_to_word
+
+
 
 def main():
     ctx_size = input("Please enter the number of sources you want to use:   ") #CONTEXT_SIZE
@@ -50,44 +53,54 @@ def main():
     context = tmp
     #set up unique vocabs
     uniq_grad = get_uniq(g2g)
+    file = open("all_gradients.txt","w")
+    for x in uniq_grad:
+        file.write(x)
+        file.write("\n")
+
+    file.close()
     # uniq_amount = get_uniq(g2a[recp_name])
     # uniq_tech = get_uniq(g2t[recp_name])
     word_to_idx, ix_to_word = set_word_ix(uniq_grad)
-    if context in word_to_idx.keys():
-        a = 1
     for num in range(num_sources, int(ctx_size)):
         # get the trained models for each model, under the context right now
         # initialize the models first
         # do modifications here
         EMBEDDING_DIM = int(300 / num)
         g2g_mod = cbow_recp.CBOW(len(uniq_grad), EMBEDDING_DIM, num)  # gta = CBOW(len(unique_vocab), EMBEDDING_DIM, CONTEXT_SIZE)
-        # g2a_mod = cbow_recp.CBOW(len(uniq_amount), EMBEDDING_DIM, num)  #gta = CBOW(len(unique_vocab), EMBEDDING_DIM, CONTEXT_SIZE)
-        # g2t_mod = cbow_recp.CBOW(len(uniq_tech), EMBEDDING_DIM, num)  # gta = CBOW(len(unique_vocab), EMBEDDING_DIM, CONTEXT_SIZE)
         for recp_name in g2g:
             #get_result
             g2g_mod = g2g_mod_operations(g2g[recp_name], g2g_mod, num, word_to_idx)
-            #g2a_result = g2a_mod_operations(g2a[recp_name], g2a_mod, num, uniq_grad, context)
-            #g2t_result = g2t_mod_operations(g2t[recp_name], g2t_mod, num, uniq_grad, context)
-
 
         pred_result = get_pred(g2g_mod, context, word_to_idx, ix_to_word)
-        print("The predicted_result")
-        print(pred_result)
         context += ", " + pred_result
 
 
+    #now find the amount and the grad
+    uniq_amount = amount_uniq(g2a)
+    #context = 2
+
+    word_to_idx_a, ix_to_word_a = set_word_ix(uniq_amount)
+    word_to_idx.update(word_to_idx_a)
+    ix_to_word.update(ix_to_word_a)
+    g2a_mod = cbow_recp.CBOW(len(word_to_idx.items()), 300, 1)
+    pred_amount = list()
+    context = context.split(",")
+    for x in context:
+        for recp_name in g2a:
+            amount = g2a[recp_name]
+            g2a_mod = g2a_mod_operations(amount, g2a_mod, 2, word_to_idx)
+
+        pred_a = get_pred(g2a_mod,x, word_to_idx, ix_to_word)
+        pred_amount.append(pred_a)
+
+
+    print(pred_amount)
+    for recp_name in g2t:
+        tech = g2t[recp_name]
+
 
     return context
-
-    #now you get the total gradients, based on the gradients, find the corresponding techniques
-
-
-
-
-    #find the corresponding amount
-
-
-
 
 def get_uniq(context):
     total_vocab = list()
@@ -101,13 +114,11 @@ def get_uniq(context):
     return set(total_vocab)
 
 def g2g_mod_operations(g2g, g2g_mod, size,word_to_idx):
-    print(g2g)
-    print(size)
     data = list()
     g2g = g2g.replace(", ",",")
     g2g = g2g.replace("  "," ")
     g2g = g2g.split(",")
-    print(g2g)
+    #print(g2g)
     #cases when there are not enough
     try:
         for i in range(size, len(g2g) - size):
@@ -138,6 +149,25 @@ def g2g_mod_operations(g2g, g2g_mod, size,word_to_idx):
 
     return g2g_model
 
+def amount_uniq(g2a):
+    amount_uniq = list()
+    for x in g2a:
+        g2a[x] = g2a[x].replace(", ",",")
+        g2a[x] = g2a[x].replace(". ",".")
+        g2a[x] = g2a[x].replace("  "," ")
+        individuals = g2a[x].split(",")
+        for ind in individuals:
+            try:
+                ind = ind.split(" ")
+                amount_uniq.append(ind[0] + " " + ind[1])
+            except:
+                pass
+
+
+    return set(amount_uniq)
+
+
+
 
 
 def g2t_mod_operations(g2t, g2t_mod, size, unique_vocab, input_ctx):
@@ -164,35 +194,40 @@ def g2t_mod_operations(g2t, g2t_mod, size, unique_vocab, input_ctx):
 
     return pred_result
 
-def g2a_mod_operations(g2a, g2a_mod, size, unique_vocab, input_ctx):
-    data = g2a.split(",")
-    for i in range(size, len(g2a) - size):
-        data_context = list()
-        for j in range(size):
-            data_context.append(g2a[i - size + j])
+def g2a_mod_operations(g2a, g2a_mod, size,word_to_idx):
+    g2a = g2a.replace(", ", ",")
+    g2a = g2a.replace(". ", ".")
+    g2a = g2a.replace("  ", " ")
+    g2a = g2a.split(",")
+    data = list()
+    try:
+        for x in g2a:
+            x = x.split(" ")
+            data1 = x[:2]
+            data1 = " ".join(data1)
+            data2 = x[2:]
+            data2 = " ".join(data2)
+            data_context = list()
+            data_context.append(data1)
+            data_context.append(data2)
 
-        for j in range(1, size + 1):
-            data_context.append(g2a[i + j])
-        data_target = g2a[i]
-        data.append((data_context, data_target))
 
-    print("Some data: ", data[:3])
+            data.append((data_context, data1))
 
-    # mapping to index
-    word_to_idx, ix_to_word = set_word_ix(unique_vocab)
+        print("Some data: ", data[:3])
 
     # train model- changed global variable if needed
-    g2g_model = grad2grad.grad2grad_model(g2a_mod, data, word_to_idx)
+        g2a_model = grad2grad.grad2grad_model(g2a_mod, data, word_to_idx)
+    except Exception as e:
+        g2a_model = g2a_mod
 
-    pred_result = get_pred(g2g_model,input_ctx,word_to_idx, ix_to_word)
-
-    return pred_result
+    return g2a_model
 
 
 def make_context_vector(context, word_to_ix):
     context = context.split(", ")
     context = list(context)
-    idxs = [word_to_ix[w] for w in context]
+    idxs = [word_to_ix[w.strip()] for w in context]
     return torch.tensor(idxs, dtype=torch.long)
 
 def get_max_prob_result(input, ix_to_word):

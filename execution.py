@@ -108,6 +108,7 @@ def g2g_mod_operations(g2g, g2g_mod, size,word_to_idx):
     g2g = g2g.replace("  "," ")
     g2g = g2g.split(",")
     print(g2g)
+    #cases when there are not enough
     try:
         for i in range(size, len(g2g) - size):
             data_context = list()

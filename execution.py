@@ -27,6 +27,14 @@ def set_word_ix(vocab):
 
     return word_to_ix,ix_to_word
 
+def set_word_ix_amount(amount, grads):
+    word_to_ix = {}
+    ix_to_word = {}
+    vocab = amount + grads
+    for i, word in enumerate(vocab):
+        word.replace("  "," ")
+        word_to_ix[word] = i
+        ix_to_word[i] = word
 
 
 def main():
@@ -96,8 +104,7 @@ def main():
 
 
     print(pred_amount)
-    for recp_name in g2t:
-        tech = g2t[recp_name]
+
 
 
     return context

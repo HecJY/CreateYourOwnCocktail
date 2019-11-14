@@ -12,7 +12,6 @@ from torch.optim import SGD
 import torch.nn.functional as F
 
 CONTEXT_SIZE = 4
-EMBEDDING_DIM = 300
 EPOCH = 20
 VERVOSE = 5
 
@@ -56,10 +55,11 @@ def main():
     word_to_idx, ix_to_word = set_word_ix(uniq_grad)
     if context in word_to_idx.keys():
         a = 1
-    for num in range(num_sources, int(ctx_size) - 1):
+    for num in range(num_sources, int(ctx_size)):
         # get the trained models for each model, under the context right now
         # initialize the models first
         # do modifications here
+        EMBEDDING_DIM = int(300 / num)
         g2g_mod = cbow_recp.CBOW(len(uniq_grad), EMBEDDING_DIM, num)  # gta = CBOW(len(unique_vocab), EMBEDDING_DIM, CONTEXT_SIZE)
         # g2a_mod = cbow_recp.CBOW(len(uniq_amount), EMBEDDING_DIM, num)  #gta = CBOW(len(unique_vocab), EMBEDDING_DIM, CONTEXT_SIZE)
         # g2t_mod = cbow_recp.CBOW(len(uniq_tech), EMBEDDING_DIM, num)  # gta = CBOW(len(unique_vocab), EMBEDDING_DIM, CONTEXT_SIZE)
@@ -71,7 +71,10 @@ def main():
 
 
         pred_result = get_pred(g2g_mod, context, word_to_idx, ix_to_word)
-        context += pred_result
+        print("The predicted_result")
+        print(pred_result)
+        context += ", " + pred_result
+
 
 
     return context
@@ -186,8 +189,8 @@ def g2a_mod_operations(g2a, g2a_mod, size, unique_vocab, input_ctx):
 
 
 def make_context_vector(context, word_to_ix):
-    print(context)
-    context = {context}
+    context = context.split(", ")
+    context = list(context)
     idxs = [word_to_ix[w] for w in context]
     return torch.tensor(idxs, dtype=torch.long)
 

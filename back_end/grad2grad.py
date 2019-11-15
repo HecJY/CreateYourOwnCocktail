@@ -1,5 +1,5 @@
-from cbow_recp import *
-from load_cocktail_recp import *
+from back_end.cbow_recp import *
+from back_end.load_cocktail_recp import *
 
 def grad2grad_model(ggm, data, word_to_idx):
 
@@ -11,7 +11,7 @@ def grad2grad_model(ggm, data, word_to_idx):
     for epoch in range(40):
         total_loss = 0
         for context, target in data:
-            inp_var = Variable(torch.LongTensor([word_to_idx[word] for word in context]))
+            inp_var = make_context_vector(context, word_to_idx)
             target_var = Variable(torch.LongTensor([word_to_idx[target]]))
 
             ggm.zero_grad()
@@ -21,9 +21,14 @@ def grad2grad_model(ggm, data, word_to_idx):
             optimizer.step()
             total_loss += loss.data
 
-        if epoch % VERVOSE == 0:
+        if epoch % 5 == 0:
             loss_avg = float(total_loss / len(data))
-            print("{}/{} loss {:.2f}".format(epoch, EPOCH, loss_avg))
+            print("{}/{} loss {:.2f}".format(epoch, 20, loss_avg))
     return ggm
 
+def make_context_vector(context, word_to_ix):
+    #context = context.split(", ")
+    #context = list(context)
+    idxs = [word_to_ix[w.strip()] for w in context]
+    return torch.tensor(idxs, dtype=torch.long)
 
